@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,19 @@ import { cn } from "@/lib/utils";
 
 const NAME_STORAGE_KEY = "wall:author-name";
 const POSTED_NOTICE_MS = 2000;
+const COUNTER_WARNING_AT = 20;
+
+/** Turn a Supabase/Postgres error into a message for visitors. */
+function describeInsertError(error: { code?: string; message?: string }): string {
+  switch (error.code) {
+    case "P0001": // raised by the rate-limit trigger; its message is written for people
+      return error.message || "You're posting too fast. Please wait a minute and try again.";
+    case "23514": // check constraint: empty or too long
+      return "Your post is empty or too long.";
+    default:
+      return "Couldn't share your post. Check your connection and try again.";
+  }
+}
 
 type PostComposerProps = {
   onPosted: (post: Post) => void;
@@ -69,7 +82,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
 
       if (insertError || !data) {
         // Keep the typed text so the visitor can retry.
-        setError(`Couldn't share your post: ${insertError?.message ?? "unknown error"}`);
+        setError(describeInsertError(insertError ?? {}));
         return;
       }
 
@@ -85,6 +98,14 @@ export function PostComposer({ onPosted }: PostComposerProps) {
       setError("Couldn't share your post. Check your connection and try again.");
     } finally {
       setSending(false);
+    }
+  }
+
+  // Ctrl+Enter / Cmd+Enter shares, like most compose boxes.
+  function handleMessageKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
     }
   }
 
@@ -112,9 +133,11 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         id={messageId}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handleMessageKeyDown}
         maxLength={MAX_BODY_LENGTH}
         placeholder="What's on your mind?"
         aria-describedby={counterId}
+        aria-keyshortcuts="Control+Enter Meta+Enter"
         rows={4}
         className="min-h-24 resize-y border-2 border-dashed border-[#bdc7d8] bg-[#eef3fb] text-sm focus-visible:border-[#3b5998]"
       />
@@ -122,8 +145,12 @@ export function PostComposer({ onPosted }: PostComposerProps) {
       <div className="flex items-center justify-between gap-3">
         <p
           id={counterId}
-          aria-live="polite"
-          className={cn("text-xs", remaining < 20 ? "font-bold text-red-600" : "text-gray-500")}
+          // Announce only near the limit; announcing every keystroke is noise.
+          aria-live={remaining < COUNTER_WARNING_AT ? "polite" : "off"}
+          className={cn(
+            "text-xs",
+            remaining < COUNTER_WARNING_AT ? "font-bold text-red-600" : "text-gray-500",
+          )}
         >
           {remaining} characters remaining
         </p>

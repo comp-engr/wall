@@ -17,6 +17,9 @@ export function ProfileSidebar() {
         alt={`Profile photo of ${PROFILE.name}`}
         width={600}
         height={600}
+        // Rendered at 160px on phones and a quarter of the (max 1152px) page on
+        // desktop, so browsers can pick a much smaller file than 600/1200px.
+        sizes="(min-width: 1152px) 264px, (min-width: 768px) 25vw, 160px"
         priority
         className="aspect-square w-40 rounded-lg object-cover md:w-full"
       />

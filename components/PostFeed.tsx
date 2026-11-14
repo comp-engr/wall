@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
 import { PostItem } from "@/components/PostItem";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post } from "@/lib/types";
@@ -10,9 +11,10 @@ type PostFeedProps = {
   loading: boolean;
   error: string | null;
   now: number;
+  onRetry: () => void;
 };
 
-export function PostFeed({ posts, loading, error, now }: PostFeedProps) {
+export function PostFeed({ posts, loading, error, now, onRetry }: PostFeedProps) {
   if (loading) {
     return (
       <div aria-busy="true" aria-label="Loading posts" className="space-y-5 py-3">
@@ -32,9 +34,12 @@ export function PostFeed({ posts, loading, error, now }: PostFeedProps) {
 
   if (error) {
     return (
-      <p role="alert" className="py-6 text-sm text-red-600">
-        {error}
-      </p>
+      <div role="alert" className="flex flex-wrap items-center gap-3 py-6 text-sm text-red-600">
+        <p>{error}</p>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Try again
+        </Button>
+      </div>
     );
   }
 
