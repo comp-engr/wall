@@ -41,6 +41,10 @@ begin
   );
   ip_key := md5(client_ip);
 
+  -- Serialize check-then-insert per visitor so parallel requests can't all
+  -- read the same count and slip past the limit. Released at commit/rollback.
+  perform pg_advisory_xact_lock(hashtextextended(ip_key, 0));
+
   select count(*) filter (where created_at > now() - interval '1 minute'),
          count(*)
     into last_min, last_hour
