@@ -18,7 +18,8 @@ const contentSecurityPolicy = [
   // Next.js injects inline bootstrap scripts; nonces would force dynamic rendering.
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  // blob: = local photo preview; Supabase = wall photos if served unoptimized.
+  `img-src 'self' data: blob: ${supabaseHost ? `https://${supabaseHost}` : ""}`.trim(),
   "font-src 'self'",
   `connect-src 'self' ${supabaseOrigins}`.trim(),
   "object-src 'none'",
@@ -39,6 +40,18 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    // Wall photos live in this project's public wall-photos bucket only.
+    remotePatterns: supabaseHost
+      ? [
+          {
+            protocol: "https",
+            hostname: supabaseHost,
+            pathname: "/storage/v1/object/public/wall-photos/**",
+          },
+        ]
+      : [],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

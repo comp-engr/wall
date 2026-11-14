@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { relativeTime } from "@/lib/time";
 import type { Post } from "@/lib/types";
 
@@ -27,6 +29,18 @@ export function PostItem({ post, now }: PostItemProps) {
         <p className="mt-1 text-sm whitespace-pre-wrap wrap-anywhere text-gray-900">
           {post.body}
         </p>
+      )}
+      {post.photo_url && (
+        <Image
+          src={post.photo_url}
+          alt={`Photo shared by ${post.author_name}`}
+          // Intrinsic size is unknown; these set the placeholder ratio and the
+          // CSS (w-full + h-auto) lets the real aspect ratio take over.
+          width={480}
+          height={360}
+          sizes="(min-width: 640px) 480px, 100vw"
+          className="mt-2 h-auto w-full max-w-[480px] rounded-lg border border-gray-200"
+        />
       )}
     </article>
   );
