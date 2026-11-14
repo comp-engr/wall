@@ -3,8 +3,8 @@ import Image from "next/image";
 // Edit these to personalize the profile.
 const PROFILE = {
   name: "Marco Burdeos",
-  network: "[YOUR SCHOOL OR COMPANY]",
-  city: "[YOUR CITY]",
+  network: "Mapua University",
+  city: "Batangas, Philippines",
 };
 
 export function ProfileSidebar() {
@@ -13,8 +13,8 @@ export function ProfileSidebar() {
       <Image
         src="/profile.jpg"
         alt={`Profile photo of ${PROFILE.name}`}
-        width={400}
-        height={400}
+        width={600}
+        height={600}
         priority
         className="aspect-square w-40 rounded-lg object-cover md:w-full"
       />
