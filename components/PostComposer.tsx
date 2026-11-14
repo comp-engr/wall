@@ -1,5 +1,6 @@
 "use client";
 
+import { LoaderCircle } from "lucide-react";
 import { useEffect, useId, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { MAX_BODY_LENGTH, MAX_NAME_LENGTH, type Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const NAME_STORAGE_KEY = "wall:author-name";
+const POSTED_NOTICE_MS = 2000;
 
 type PostComposerProps = {
   onPosted: (post: Post) => void;
@@ -24,6 +26,8 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Timestamp of the last successful post; a new value restarts the 2s notice.
+  const [postedAt, setPostedAt] = useState<number | null>(null);
 
   // Restore the last used name. localStorage only exists in the browser,
   // so this runs after mount; storage can also throw (e.g. private mode).
@@ -36,6 +40,13 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     }
   }, []);
 
+  // Hide the "Posted!" notice after 2 seconds (cleared on unmount or a newer post).
+  useEffect(() => {
+    if (postedAt === null) return;
+    const timer = setTimeout(() => setPostedAt(null), POSTED_NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [postedAt]);
+
   const body = message.trim();
   const remaining = MAX_BODY_LENGTH - message.length;
   const canShare = body.length > 0 && body.length <= MAX_BODY_LENGTH && !sending;
@@ -47,6 +58,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     const authorName = name.trim() || "Anonymous";
     setSending(true);
     setError(null);
+    setPostedAt(null);
 
     try {
       const { data, error: insertError } = await supabase
@@ -62,6 +74,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
       }
 
       setMessage("");
+      setPostedAt(Date.now());
       try {
         localStorage.setItem(NAME_STORAGE_KEY, name.trim());
       } catch {
@@ -77,7 +90,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <div className="space-y-1">
+      <div className="flex flex-col gap-2">
         <label htmlFor={nameId} className="text-xs font-bold text-gray-600">
           Your name
         </label>
@@ -88,7 +101,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
           maxLength={MAX_NAME_LENGTH}
           placeholder="Anonymous"
           autoComplete="name"
-          className="max-w-xs"
+          className="w-full"
         />
       </div>
 
@@ -114,13 +127,41 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         >
           {remaining} characters remaining
         </p>
-        <Button
-          type="submit"
-          disabled={!canShare}
-          className="bg-[#3b5998] px-4 font-bold text-white hover:bg-[#2d4373]"
-        >
-          {sending ? "Sharing…" : "Share"}
-        </Button>
+        <div className="flex items-center gap-3">
+          {postedAt !== null && (
+            <span role="status" className="text-sm font-bold text-green-600">
+              Posted!
+            </span>
+          )}
+          <Button
+            type="submit"
+            disabled={!canShare}
+            aria-busy={sending}
+            className={cn(
+              "px-4 font-bold",
+              // Override the base disabled style (faded, no pointer events) so
+              // the not-allowed cursor shows and the idle state reads as gray.
+              "disabled:pointer-events-auto disabled:opacity-100",
+              // Each state sets its own hover color: the variant's default
+              // hover (bg-primary/80, near-black) would otherwise show on the
+              // disabled button, which now receives pointer events.
+              sending
+                ? "cursor-wait bg-[#3b5998] text-white hover:bg-[#3b5998]"
+                : canShare
+                  ? "bg-[#3b5998] text-white hover:bg-[#2d4373]"
+                  : "cursor-not-allowed bg-gray-300 text-gray-600 hover:bg-gray-300",
+            )}
+          >
+            {sending ? (
+              <>
+                <LoaderCircle className="animate-spin" aria-hidden="true" />
+                Sharing...
+              </>
+            ) : (
+              "Share"
+            )}
+          </Button>
+        </div>
       </div>
 
       {error && (

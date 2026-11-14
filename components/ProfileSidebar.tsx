@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { Card } from "@/components/ui/card";
+
 // Edit these to personalize the profile.
 const PROFILE = {
   name: "Marco Burdeos",
@@ -26,14 +28,18 @@ export function ProfileSidebar() {
         <p className="text-sm text-gray-500">wall</p>
       </div>
 
-      <section aria-labelledby="info-heading" className="text-sm">
+      <Card
+        role="region"
+        aria-labelledby="info-heading"
+        className="gap-0 rounded-lg border border-gray-200 py-0 text-sm ring-0"
+      >
         <h2
           id="info-heading"
-          className="border-t border-[#94a3c4] bg-[#eceff5] px-2 py-1 text-xs font-bold text-[#333]"
+          className="border-b border-gray-200 bg-[#eceff5] px-3 py-1.5 text-xs font-bold text-[#333]"
         >
           Information
         </h2>
-        <dl className="space-y-2 px-2 pt-2">
+        <dl className="space-y-2 px-3 py-3">
           <div>
             <dt className="text-xs text-gray-500">Networks:</dt>
             <dd className="text-gray-900">{PROFILE.network}</dd>
@@ -43,7 +49,7 @@ export function ProfileSidebar() {
             <dd className="text-gray-900">{PROFILE.city}</dd>
           </div>
         </dl>
-      </section>
+      </Card>
     </aside>
   );
 }
